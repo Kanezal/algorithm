@@ -4,7 +4,6 @@ from rest_framework.response import Response
 
 from .serializers import (
     FordFulkersonSerializer,
-    ContinuousCommonIncreasingSubsequenceSerializer,
     MalgrangeSCCSerializer
 )
 from .algorithms import (
@@ -17,14 +16,29 @@ from .algorithms import (
 @api_view(['POST'])
 def ford_fulkerson_view(request):
     """
-    Эндпоинт для алгоритма Форда-Фалкерсона (новая реализация).
-    Ожидает: graph (список смежности), nR (кол-во правых вершин)
+    Эндпоинт для алгоритма Форда-Фалкерсона.
+    Принимает данные через POST-запрос.
+    Ожидаемые данные в теле запроса (JSON):
+    { "graph": [[...], ...], "nR": ... } (старый формат, nR не используется)
+    или (предпочтительно):
+    { "graph": [[индексы_правых_вершин_для_левой_0], [для_левой_1], ...] }
+    где graph[i] - список правых вершин, смежных с левой вершиной i.
+    Количество правых вершин (nR) будет вычислено автоматически.
     """
     serializer = FordFulkersonSerializer(data=request.data)
     if serializer.is_valid():
         graph = serializer.validated_data['graph']
-        # graph: список смежности, nR: максимальный индекс правой вершины + 1
-        nR = max([max(g) if g else -1 for g in graph]) + 1 if graph else 0
+        nR = 0
+        if graph: # Проверяем, что граф не пустой
+            max_right_node_index = -1
+            for g_list in graph:
+                if g_list: # Проверяем, что список смежности для левой вершины не пуст
+                    current_max = max(g_list)
+                    if current_max > max_right_node_index:
+                        max_right_node_index = current_max
+            if max_right_node_index != -1:
+                 nR = max_right_node_index + 1
+
         try:
             result = ford_Falkerson(graph, nR)
             return Response({
@@ -46,23 +60,27 @@ def ford_fulkerson_view(request):
 @api_view(['POST'])
 def lcis_view(request):
     """
-    Эндпоинт для поиска наибольшей непрерывной общей возрастающей подпоследовательности для >=4 последовательностей.
-    Ожидает: sequences (список списков)
+    Эндпоинт для поиска наибольшей непрерывной общей возрастающей подпоследовательности (LCIS).
+    Принимает данные через POST-запрос.
+    Ожидаемые данные в теле запроса (JSON):
+    { "sequences": [[числа_посл_1], [числа_посл_2], ..., [числа_посл_N]] } (N >= 4)
+    Для обратной совместимости также поддерживается старый формат (N=2):
+    { "sequence1": [...], "sequence2": [...] }
     """
-    # Для обратной совместимости поддержим старый вариант (2 последовательности)
     data = request.data
     sequences = data.get('sequences')
+
     if not sequences:
-        # Если sequences нет, пробуем старый вариант
         seq1 = data.get('sequence1')
         seq2 = data.get('sequence2')
-        if seq1 and seq2:
+        if seq1 is not None and seq2 is not None:
             sequences = [seq1, seq2]
         else:
             return Response({
                 'status': 'error',
-                'message': 'Необходимо передать sequences (список списков) или sequence1 и sequence2'
+                'message': 'Необходимо передать sequences (список списков из >=2 элементов) или sequence1 и sequence2'
             }, status=status.HTTP_400_BAD_REQUEST)
+    
     try:
         result = find_continuous_common_increasing_subsequence(sequences)
         if 'error' in result:
@@ -85,34 +103,37 @@ def lcis_view(request):
 @api_view(['POST'])
 def malgrange_scc_view(request):
     """
-    Эндпоинт для поиска компонент сильной связности (SCC) по матрице смежности.
-    Ожидает: adj_matrix (матрица смежности)
+    Эндпоинт для поиска компонент сильной связности (SCC) по матрице смежности (алгоритм Мальгранжа).
+    Принимает данные через POST-запрос.
+    Ожидаемые данные в теле запроса (JSON):
+    { "adj_matrix": [[0,1,0], [0,0,1], [1,0,0]] } # Матрица смежности
     """
-    data = request.data
-    adj_matrix = data.get('adj_matrix')
-    if not adj_matrix:
-        return Response({
-            'status': 'error',
-            'message': 'Необходимо передать adj_matrix (матрицу смежности)'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        result = malgrange_scc(adj_matrix)
-        return Response({
-            'status': 'success',
-            'algorithm': 'Malgrange SCC',
-            'result': result
-        }, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({
-            'status': 'error',
-            'message': str(e)
-        }, status=status.HTTP_400_BAD_REQUEST)
+    serializer = MalgrangeSCCSerializer(data=request.data)
+    if serializer.is_valid():
+        adj_matrix = serializer.validated_data['adj_matrix']
+        
+        try:
+            result = malgrange_scc(adj_matrix)
+            return Response({
+                'status': 'success',
+                'algorithm': 'Malgrange SCC',
+                'result': result
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+    return Response({
+        'status': 'error',
+        'errors': serializer.errors
+    }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
 def api_info(request):
     """
-    Информация об API и доступных эндпоинтах
+    Предоставляет общую информацию об API и доступных эндпоинтах.
     """
     return Response({
         'title': 'Algorithms API',
@@ -135,7 +156,7 @@ def api_info(request):
             'lcis': {
                 'url': '/api/lcis/',
                 'method': 'POST',
-                'description': 'Наибольшая общая возрастающая подпоследовательность (>=4 последовательностей)',
+                'description': 'Наибольшая общая непрерывная возрастающая подпоследовательность (для >=2, рекомендуется >=4 последовательностей)',
                 'example_request': {
                     'sequences': [
                         [1, 3, 5, 7, 9, 2, 4],
@@ -154,7 +175,7 @@ def api_info(request):
                         [0, 1, 0, 0],
                         [0, 0, 1, 0],
                         [0, 0, 0, 1],
-                        [1, 0, 0, 0]
+                        [1, 0, 0, 0] # Пример для графа-цикла 0->1->2->3->0
                     ]
                 }
             }

@@ -102,12 +102,12 @@ def lagrange_interpolation(points, x):
 
 def find_continuous_common_increasing_subsequence(sequences):
     """
-    Находит наибольшую непрерывную общую возрастающую подпоследовательность для четырех и более последовательностей.
+    Находит наибольшую непрерывную общую возрастающую подпоследовательность для двух и более последовательностей.
     sequences: список последовательностей (списков чисел)
     Возвращает словарь с результатом для API.
     """
-    if len(sequences) < 4:
-        return {"error": "Должно быть 4 или более последовательностей"}
+    if len(sequences) < 2:
+        return {"error": "Должно быть 2 или более последовательностей"}
 
     def is_continuous_subsequence(sub, seq):
         n = len(sub)

@@ -49,7 +49,7 @@ export default function MalgrangeSCCPage() {
     }
   }
 
-  const addExampleGraph = (type: 'cycle' | 'dag' | 'complex') => {
+  const addExampleGraph = (type: 'cycle' | 'dag' | 'complex' | 'selfloops') => {
     if (type === 'cycle') {
       setNodes(5)
       setGraph([
@@ -67,6 +67,14 @@ export default function MalgrangeSCCPage() {
         [0, 0, 0, 1, 1],
         [0, 0, 0, 0, 1],
         [0, 0, 0, 0, 0]
+      ])
+    } else if (type === 'selfloops') {
+      setNodes(4)
+      setGraph([
+        [1, 1, 0, 0],
+        [0, 1, 1, 0],
+        [0, 0, 1, 1],
+        [1, 0, 0, 1]
       ])
     } else {
       setNodes(7)
@@ -112,7 +120,7 @@ export default function MalgrangeSCCPage() {
           <input
             type="range"
             min="2"
-            max="10"
+            max="15"
             value={nodes}
             onChange={(e) => handleNodesChange(parseInt(e.target.value))}
             className="w-full"
@@ -139,6 +147,12 @@ export default function MalgrangeSCCPage() {
               className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
             >
               Сложный граф
+            </button>
+            <button
+              onClick={() => addExampleGraph('selfloops')}
+              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+            >
+              С петлями
             </button>
           </div>
         </div>
@@ -168,7 +182,6 @@ export default function MalgrangeSCCPage() {
                               ? 'bg-blue-500 text-white' 
                               : 'bg-gray-200 text-gray-400'
                           } hover:opacity-80 transition-colors`}
-                          disabled={i === j}
                         >
                           {cell}
                         </button>

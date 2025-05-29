@@ -6,9 +6,7 @@ import { algorithmAPI, LCISResponse } from '@/lib/api'
 export default function LCISPage() {
   const [sequences, setSequences] = useState<string[]>([
     '3 4 9 1 7 5 6',
-    '8 4 2 1 3 5 6 7',
-    '1 2 3 4 5 6 7',
-    '4 1 5 3 6 7'
+    '8 4 2 1 3 5 6 7'
   ])
   const [result, setResult] = useState<LCISResponse | null>(null)
   const [loading, setLoading] = useState(false)
@@ -23,7 +21,7 @@ export default function LCISPage() {
   }
 
   const removeSequence = (index: number) => {
-    if (sequences.length > 4) {
+    if (sequences.length > 2) {
       setSequences(sequences.filter((_, i) => i !== index))
     }
   }
@@ -40,8 +38,8 @@ export default function LCISPage() {
     try {
       const parsedSequences = sequences.map(seq => parseArray(seq)).filter(seq => seq.length > 0)
       
-      if (parsedSequences.length < 4) {
-        throw new Error('Необходимо минимум 4 последовательности')
+      if (parsedSequences.length < 2) {
+        throw new Error('Необходимо минимум 2 последовательности')
       }
       
       if (parsedSequences.some(seq => seq.length === 0)) {
@@ -86,7 +84,7 @@ export default function LCISPage() {
       </h1>
       
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Входные последовательности (минимум 4)</h2>
+        <h2 className="text-xl font-semibold mb-4">Входные последовательности (минимум 2)</h2>
         
         <div className="space-y-4 mb-4">
           {sequences.map((seq, index) => (
@@ -103,7 +101,7 @@ export default function LCISPage() {
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Числа через пробел или запятую"
                   />
-                  {sequences.length > 4 && (
+                  {sequences.length > 2 && (
                     <button
                       onClick={() => removeSequence(index)}
                       className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
@@ -131,15 +129,15 @@ export default function LCISPage() {
 
         <button
           onClick={runAlgorithm}
-          disabled={loading || parsedSequences.filter(seq => seq.length > 0).length < 4}
+          disabled={loading || parsedSequences.filter(seq => seq.length > 0).length < 2}
           className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400 transition-colors"
         >
           {loading ? 'Выполнение...' : 'Найти LCIS'}
         </button>
         
-        {parsedSequences.filter(seq => seq.length > 0).length < 4 && (
+        {parsedSequences.filter(seq => seq.length > 0).length < 2 && (
           <p className="text-red-500 text-sm mt-2">
-            Добавьте минимум 4 последовательности с числами
+            Добавьте минимум 2 последовательности с числами
           </p>
         )}
       </div>

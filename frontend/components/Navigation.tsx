@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+// Компонент навигации: отображает меню для перехода между страницами алгоритмов
 const Navigation = () => {
   const pathname = usePathname()
 
@@ -13,6 +14,7 @@ const Navigation = () => {
     { href: '/malgrange-scc', label: 'Мальгранж SCC' },
   ]
 
+  // Вывод ссылок на страницы
   return (
     <nav className="bg-white shadow-md">
       <div className="container mx-auto px-4">

@@ -1,3 +1,4 @@
+// Главная страница: выводит список доступных алгоритмов и ссылки на них
 export default function Home() {
   const algorithms = [
     {
@@ -20,6 +21,7 @@ export default function Home() {
     }
   ]
 
+  // Вывод карточек с алгоритмами
   return (
     <div className="max-w-7xl mx-auto">
       <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">

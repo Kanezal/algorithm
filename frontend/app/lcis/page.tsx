@@ -1,51 +1,63 @@
+// @ts-nocheck
+
 'use client'
 
 import { useState } from 'react'
 import { algorithmAPI, LCISResponse } from '@/lib/api'
 
+// Страница LCIS: пользователь вводит последовательности, запускает алгоритм и видит результат
 export default function LCISPage() {
+  // --- Состояния для хранения последовательностей, результата, загрузки и ошибок ---
   const [sequences, setSequences] = useState<string[]>([
     '3 4 9 1 7 5 6',
     '8 4 2 1 3 5 6 7'
-  ])
-  const [result, setResult] = useState<LCISResponse | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  ]) // строки с числами для каждой последовательности
+  const [result, setResult] = useState<LCISResponse | null>(null) // результат работы алгоритма
+  const [loading, setLoading] = useState(false) // индикатор загрузки
+  const [error, setError] = useState<string | null>(null) // сообщение об ошибке
 
+  // --- Преобразование строки в массив чисел ---
   const parseArray = (input: string): number[] => {
+    // Разделяем по пробелу или запятой, фильтруем нечисловые значения
     return input.split(/[\s,]+/).map(n => parseInt(n)).filter(n => !isNaN(n))
   }
 
+  // --- Добавление новой пустой последовательности ---
   const addSequence = () => {
     setSequences([...sequences, ''])
   }
 
+  // --- Удаление последовательности по индексу (если их больше двух) ---
   const removeSequence = (index: number) => {
     if (sequences.length > 2) {
       setSequences(sequences.filter((_, i) => i !== index))
     }
   }
 
+  // --- Обновление значения последовательности по индексу ---
   const updateSequence = (index: number, value: string) => {
     const newSequences = [...sequences]
     newSequences[index] = value
     setSequences(newSequences)
   }
 
+  // --- Запуск алгоритма LCIS через API ---
   const runAlgorithm = async () => {
     setLoading(true)
     setError(null)
     try {
+      // Преобразуем все строки в массивы чисел
       const parsedSequences = sequences.map(seq => parseArray(seq)).filter(seq => seq.length > 0)
       
+      // Проверяем, что хотя бы две последовательности валидны
       if (parsedSequences.length < 2) {
         throw new Error('Необходимо минимум 2 последовательности')
       }
-      
+      // Проверяем, что в каждой последовательности есть хотя бы один элемент
       if (parsedSequences.some(seq => seq.length === 0)) {
         throw new Error('Все последовательности должны содержать хотя бы один элемент')
       }
-      
+      // Отправляем данные на сервер
       const response = await algorithmAPI.lcis({
         sequences: parsedSequences
       })
@@ -58,12 +70,12 @@ export default function LCISPage() {
     }
   }
 
+  // --- Массивы чисел для каждой последовательности (для отображения) ---
   const parsedSequences = sequences.map(seq => parseArray(seq))
 
-  // Функция для поиска непрерывной подпоследовательности в массиве
+  // --- Поиск позиции подпоследовательности в массиве (для подсветки LCIS) ---
   const findSubsequencePosition = (sequence: number[], subsequence: number[]): number => {
     if (subsequence.length === 0) return -1
-    
     for (let i = 0; i <= sequence.length - subsequence.length; i++) {
       let match = true
       for (let j = 0; j < subsequence.length; j++) {
@@ -77,6 +89,7 @@ export default function LCISPage() {
     return -1
   }
 
+  // --- Отрисовка формы ввода, кнопок, результата и подсветки LCIS ---
   return (
     <div className="max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">

@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   description: "Визуализация алгоритмов Форд-Фалкерсон, LCIS и Мальгранж",
 };
 
+// Корневой layout: подключает шрифты, глобальные стили и навигацию, оборачивает все страницы
 export default function RootLayout({
   children,
 }: Readonly<{

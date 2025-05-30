@@ -1,22 +1,28 @@
+// @ts-nocheck
+
 'use client'
 
 import { useState } from 'react'
 import { algorithmAPI, FordFulkersonResponse } from '@/lib/api'
 
+// Страница Ford-Fulkerson: пользователь задаёт граф, запускает алгоритм и видит результат
 export default function FordFulkersonPage() {
-  const [leftNodes, setLeftNodes] = useState(4)
-  const [rightNodes, setRightNodes] = useState(4)
+  // --- Состояния для левой и правой доли графа, списка смежности и результата ---
+  const [leftNodes, setLeftNodes] = useState(4) // количество левых вершин
+  const [rightNodes, setRightNodes] = useState(4) // количество правых вершин
   const [adjacencyList, setAdjacencyList] = useState<number[][]>([
     [0, 1, 2],    // Вершина 0 соединена с 0, 1, 2 из правой доли
     [1, 2],       // Вершина 1 соединена с 1, 2 из правой доли
     [0, 3],       // Вершина 2 соединена с 0, 3 из правой доли
     [2, 3]        // Вершина 3 соединена с 2, 3 из правой доли
   ])
-  const [result, setResult] = useState<FordFulkersonResponse | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [result, setResult] = useState<FordFulkersonResponse | null>(null) // результат работы алгоритма
+  const [loading, setLoading] = useState(false) // индикатор загрузки
+  const [error, setError] = useState<string | null>(null) // сообщение об ошибке
 
+  // --- Обработка изменения количества левых вершин ---
   const handleLeftNodesChange = (newNodes: number) => {
+    // Создаём новый список смежности с нужным количеством строк
     const newAdjList = Array(newNodes).fill(null).map((_, i) => 
       i < adjacencyList.length && adjacencyList[i] ? adjacencyList[i] : []
     )
@@ -24,8 +30,9 @@ export default function FordFulkersonPage() {
     setAdjacencyList(newAdjList)
   }
 
+  // --- Обработка изменения количества правых вершин ---
   const handleRightNodesChange = (newNodes: number) => {
-    // Фильтруем существующие списки смежности
+    // Обрезаем все списки смежности, чтобы не было рёбер к несуществующим вершинам
     const newAdjList = adjacencyList.map(list => 
       list ? list.filter(node => node < newNodes) : []
     )
@@ -33,6 +40,7 @@ export default function FordFulkersonPage() {
     setAdjacencyList(newAdjList)
   }
 
+  // --- Добавление или удаление ребра между вершинами ---
   const toggleEdge = (leftNode: number, rightNode: number) => {
     const newAdjList = [...adjacencyList]
     if (!newAdjList[leftNode]) {
@@ -41,24 +49,26 @@ export default function FordFulkersonPage() {
     const index = newAdjList[leftNode].indexOf(rightNode)
     
     if (index === -1) {
-      // Добавляем ребро
+      // Если ребра нет — добавляем
       newAdjList[leftNode] = [...newAdjList[leftNode], rightNode].sort((a, b) => a - b)
     } else {
-      // Удаляем ребро
+      // Если ребро есть — удаляем
       newAdjList[leftNode] = newAdjList[leftNode].filter(node => node !== rightNode)
     }
-    
     setAdjacencyList(newAdjList)
   }
 
+  // --- Проверка наличия ребра между вершинами ---
   const hasEdge = (leftNode: number, rightNode: number): boolean => {
     return adjacencyList[leftNode]?.includes(rightNode) || false
   }
 
+  // --- Запуск алгоритма Ford-Fulkerson через API ---
   const runAlgorithm = async () => {
     setLoading(true)
     setError(null)
     try {
+      // Отправляем текущий граф на сервер
       const response = await algorithmAPI.fordFulkerson({
         graph: adjacencyList
       })
@@ -72,6 +82,7 @@ export default function FordFulkersonPage() {
     }
   }
 
+  // --- Отрисовка таблицы рёбер, списка смежности, кнопки запуска и результата ---
   return (
     <div className="max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">

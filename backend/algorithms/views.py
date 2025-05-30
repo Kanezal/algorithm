@@ -14,106 +14,127 @@ from .algorithms import (
 )
 
 
+# --- Эндпоинт для алгоритма Форда-Фалкерсона ---
 @api_view(['POST'])
 def ford_fulkerson_view(request):
     """
     Эндпоинт для алгоритма Форда-Фалкерсона (новая реализация).
     Ожидает: graph (список смежности), nR (кол-во правых вершин)
     """
+    # Сериализуем и валидируем входные данные из запроса
     serializer = FordFulkersonSerializer(data=request.data)
     if serializer.is_valid():
+        # Получаем список смежности из валидированных данных
         graph = serializer.validated_data['graph']
-        # graph: список смежности, nR: максимальный индекс правой вершины + 1
+        # Определяем nR — максимальный индекс правой вершины + 1 (если граф не пустой)
         nR = max([max(g) if g else -1 for g in graph]) + 1 if graph else 0
         try:
+            # Запускаем основной алгоритм Форда-Фалкерсона
             result = ford_Falkerson(graph, nR)
+            # Возвращаем успешный ответ с результатом
             return Response({
                 'status': 'success',
                 'algorithm': 'Ford-Fulkerson',
                 'result': result
             }, status=status.HTTP_200_OK)
         except Exception as e:
+            # В случае ошибки выполнения алгоритма возвращаем ошибку
             return Response({
                 'status': 'error',
                 'message': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
+    # Если сериализация не прошла — возвращаем ошибки валидации
     return Response({
         'status': 'error',
         'errors': serializer.errors
     }, status=status.HTTP_400_BAD_REQUEST)
 
 
+# --- Эндпоинт для поиска наибольшей непрерывной общей возрастающей подпоследовательности ---
 @api_view(['POST'])
 def lcis_view(request):
     """
     Эндпоинт для поиска наибольшей непрерывной общей возрастающей подпоследовательности для >=2 последовательностей.
     Ожидает: sequences (список списков)
     """
-    # Для обратной совместимости поддержим старый вариант (2 последовательности)
+    # Получаем данные из запроса
     data = request.data
     sequences = data.get('sequences')
     if not sequences:
-        # Если sequences нет, пробуем старый вариант
+        # Если sequences не передан, пробуем получить по отдельности sequence1 и sequence2
         seq1 = data.get('sequence1')
         seq2 = data.get('sequence2')
         if seq1 and seq2:
             sequences = [seq1, seq2]
         else:
+            # Если нет нужных данных — возвращаем ошибку
             return Response({
                 'status': 'error',
                 'message': 'Необходимо передать sequences (список списков) или sequence1 и sequence2'
             }, status=status.HTTP_400_BAD_REQUEST)
     try:
+        # Запускаем алгоритм поиска LCIS
         result = find_continuous_common_increasing_subsequence(sequences)
         if 'error' in result:
+            # Если алгоритм вернул ошибку — возвращаем её
             return Response({
                 'status': 'error',
                 'message': result['error']
             }, status=status.HTTP_400_BAD_REQUEST)
+        # Возвращаем успешный ответ с результатом
         return Response({
             'status': 'success',
             'algorithm': 'Continuous Common Increasing Subsequence',
             'result': result
         }, status=status.HTTP_200_OK)
     except Exception as e:
+        # В случае ошибки выполнения алгоритма возвращаем ошибку
         return Response({
             'status': 'error',
             'message': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
+# --- Эндпоинт для поиска компонент сильной связности по матрице смежности ---
 @api_view(['POST'])
 def malgrange_scc_view(request):
     """
     Эндпоинт для поиска компонент сильной связности (SCC) по матрице смежности.
     Ожидает: adj_matrix (матрица смежности)
     """
+    # Получаем данные из запроса
     data = request.data
     adj_matrix = data.get('adj_matrix')
     if not adj_matrix:
+        # Если не передана матрица — возвращаем ошибку
         return Response({
             'status': 'error',
             'message': 'Необходимо передать adj_matrix (матрицу смежности)'
         }, status=status.HTTP_400_BAD_REQUEST)
     try:
+        # Запускаем алгоритм поиска компонент сильной связности
         result = malgrange_scc(adj_matrix)
+        # Возвращаем успешный ответ с результатом
         return Response({
             'status': 'success',
             'algorithm': 'Malgrange SCC',
             'result': result
         }, status=status.HTTP_200_OK)
     except Exception as e:
+        # В случае ошибки выполнения алгоритма возвращаем ошибку
         return Response({
             'status': 'error',
             'message': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
+# --- Эндпоинт для получения информации об API и доступных алгоритмах ---
 @api_view(['GET'])
 def api_info(request):
     """
     Информация об API и доступных эндпоинтах
     """
+    # Возвращаем структуру с описанием всех доступных эндпоинтов и примерами запросов
     return Response({
         'title': 'Algorithms API',
         'version': '1.0',

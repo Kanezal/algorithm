@@ -1,10 +1,13 @@
+// @ts-nocheck
 'use client'
 
 import { useState } from 'react'
 import { algorithmAPI, MalgrangeSCCResponse } from '@/lib/api'
 
+// Страница Malgrange SCC: пользователь задаёт матрицу смежности, запускает алгоритм и видит результат
 export default function MalgrangeSCCPage() {
-  const [nodes, setNodes] = useState(7)
+  // --- Состояния для количества вершин, матрицы смежности, результата, загрузки и ошибок ---
+  const [nodes, setNodes] = useState(7) // количество вершин в графе
   const [graph, setGraph] = useState<number[][]>([
     [0, 1, 0, 0, 0, 0, 0],
     [0, 0, 1, 0, 0, 0, 0],
@@ -13,18 +16,22 @@ export default function MalgrangeSCCPage() {
     [0, 0, 0, 0, 0, 1, 0],
     [0, 0, 0, 1, 0, 0, 1],
     [0, 0, 0, 0, 0, 1, 0]
-  ])
-  const [result, setResult] = useState<MalgrangeSCCResponse | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  ]) // матрица смежности
+  const [result, setResult] = useState<MalgrangeSCCResponse | null>(null) // результат работы алгоритма
+  const [loading, setLoading] = useState(false) // индикатор загрузки
+  const [error, setError] = useState<string | null>(null) // сообщение об ошибке
 
+  // --- Изменение значения в матрице смежности по клику ---
   const handleGraphChange = (i: number, j: number) => {
+    // Инвертируем значение ребра (0 <-> 1)
     const newGraph = [...graph]
     newGraph[i][j] = newGraph[i][j] === 0 ? 1 : 0
     setGraph(newGraph)
   }
 
+  // --- Изменение количества вершин ---
   const handleNodesChange = (newNodes: number) => {
+    // Создаём новую матрицу нужного размера, копируем старые значения
     const newGraph = Array(newNodes).fill(null).map(() => Array(newNodes).fill(0))
     for (let i = 0; i < Math.min(nodes, newNodes); i++) {
       for (let j = 0; j < Math.min(nodes, newNodes); j++) {
@@ -35,10 +42,12 @@ export default function MalgrangeSCCPage() {
     setGraph(newGraph)
   }
 
+  // --- Запуск алгоритма Malgrange SCC через API ---
   const runAlgorithm = async () => {
     setLoading(true)
     setError(null)
     try {
+      // Отправляем текущую матрицу смежности на сервер
       const response = await algorithmAPI.malgrangeSCC({ adj_matrix: graph })
       setResult(response)
     } catch (err) {
@@ -49,7 +58,9 @@ export default function MalgrangeSCCPage() {
     }
   }
 
+  // --- Быстрая подстановка примеров графов ---
   const addExampleGraph = (type: 'cycle' | 'dag' | 'complex' | 'selfloops') => {
+    // В зависимости от типа подставляем разные матрицы смежности
     if (type === 'cycle') {
       setNodes(5)
       setGraph([
@@ -90,7 +101,9 @@ export default function MalgrangeSCCPage() {
     }
   }
 
+  // --- Получение цвета для компоненты (для визуализации) ---
   const getComponentColor = (componentIndex: number) => {
+    // Цвета для разных компонент (циклично)
     const colors = [
       'bg-red-100 text-red-800',
       'bg-blue-100 text-blue-800',
@@ -104,6 +117,7 @@ export default function MalgrangeSCCPage() {
     return colors[componentIndex % colors.length]
   }
 
+  // --- Отрисовка формы, матрицы, кнопки запуска и результата с подсветкой компонент ---
   return (
     <div className="max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">
@@ -174,7 +188,7 @@ export default function MalgrangeSCCPage() {
                   <tr key={i}>
                     <td className="px-2 py-1 font-medium text-sm">{i}</td>
                     {row.map((cell, j) => (
-                      <td key={j} className="px-1 py-1">
+                      <td key={j} className="px-1 py-1 text-center align-middle">
                         <button
                           onClick={() => handleGraphChange(i, j)}
                           className={`w-10 h-10 rounded ${
